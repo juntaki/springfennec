@@ -21,12 +21,13 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
-    compile 'com.google.auto.service:auto-service:1.0-rc2'
-    kapt 'com.google.auto.service:auto-service:1.0-rc2'
+    compileOnly "com.google.auto.service:auto-service:1.0-rc3"
+    kapt "com.google.auto.service:auto-service:1.0-rc3"
 }
 
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.freeCompilerArgs = ["-include-runtime"]
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
