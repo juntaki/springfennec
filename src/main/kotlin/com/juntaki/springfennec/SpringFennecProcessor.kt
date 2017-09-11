@@ -12,21 +12,23 @@ import javax.tools.Diagnostic
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("io.swagger.annotations.*", "org.springframework.web.bind.annotation.*")
 class SpringfennecProcessor : AbstractProcessor() {
+    var checked = false
     override fun process(annotations: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
-        processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "Test")
+        // Only first round is enough.
+        if (checked) return true
+        checked = true
+
+        // Check if annotation processor work
+        processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Springfennec is running")
+
+        // spec.json
         val printWriter = File("spec.json").printWriter()
-        printWriter.println("test")
-        printWriter.println("aaaa")
-        for (it in roundEnv.getElementsAnnotatedWith(Api::class.java)) {
-            printWriter.println("bbbb")
-            File("somefile.txt").printWriter().use { out ->
-                out.println("hoge")
-            }
-            processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, "ELEMENT: " + it.toString())
+         roundEnv.getElementsAnnotatedWith(Api::class.java).forEach {
+            printWriter.println("ELEMENT: " + it.toString())
             it.enclosedElements.forEach {
-                processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, " enclosed: " + it.toString())
-//                processingEnv.messager.printMessage(Diagnostic.Kind.WARNING, " enclosed: " +
-//                        processingEnv.elementUtils.getAllAnnotationMirrors(it))
+                printWriter.println(" enclosed: " + it.toString())
+                printWriter.println(" enclosed: " + it.toString() +
+                        processingEnv.elementUtils.getAllAnnotationMirrors(it))
             }
         }
         printWriter.flush()
