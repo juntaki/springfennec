@@ -3,8 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/springfennec.iml" filepath="$PROJECT_DIR$/springfennec.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/springfennec_main.iml" filepath="$PROJECT_DIR$/.idea/modules/springfennec_main.iml" group="springfennec" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/springfennec_test.iml" filepath="$PROJECT_DIR$/.idea/modules/springfennec_test.iml" group="springfennec" />
     </modules>
   </component>
 </project>
