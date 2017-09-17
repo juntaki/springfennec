@@ -22,11 +22,10 @@ class Processor : AbstractProcessor() {
         processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Springfennec is running")
 
         val swagger = Swagger()
-        val springfennecVisitor = Visitor(swagger)
 
         // Create spec.json
-        roundEnv.getElementsAnnotatedWith(Api::class.java).forEach {
-            it.accept(springfennecVisitor, swagger)
+        roundEnv.rootElements.forEach {
+            it.accept(Visitor(swagger), null)
         }
 
         File("spec.json").printWriter().use {
