@@ -13,7 +13,7 @@ import javax.tools.Diagnostic
 @AutoService(Processor::class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("io.swagger.annotations.*", "org.springframework.web.bind.annotation.*")
-class SpringfennecProcessor : AbstractProcessor() {
+class Processor : AbstractProcessor() {
     var checked = false
     override fun process(annotations: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
         // Only first round is enough.
@@ -24,7 +24,7 @@ class SpringfennecProcessor : AbstractProcessor() {
         processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Springfennec is running")
 
         val swagger = Swagger()
-        val springfennecVisitor = SpringfennecVisitor()
+        val springfennecVisitor = Visitor(swagger)
 
         // Create spec.json
         roundEnv.getElementsAnnotatedWith(Api::class.java).forEach {
