@@ -4,13 +4,18 @@ import io.swagger.annotations.ApiOperation
 import io.swagger.models.Operation
 import io.swagger.models.Path
 import io.swagger.models.Swagger
+import org.springframework.core.annotation.AnnotatedElementUtils
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import javax.lang.model.element.*
 import javax.lang.model.util.ElementScanner8
+import javax.lang.model.util.Elements
+import javax.lang.model.util.Types
 
 class Visitor(
-        private val swagger: Swagger
+        private val swagger: Swagger,
+        private val elementUtils: Elements,
+        private val typeUtils: Types
 ) : ElementScanner8<Void?, Void?>() {
     val context = Context()
     // Class
@@ -44,7 +49,7 @@ class Visitor(
                     operation.tags = it.tags.toList()
                 }
 
-                e.accept(ParamVisitor(operation.parameters), null)
+                e.accept(ParamVisitor(operation.parameters, elementUtils, typeUtils), null)
                 requestMapping.method.forEach {
                     when(it) {
                         RequestMethod.DELETE -> path.delete = operation

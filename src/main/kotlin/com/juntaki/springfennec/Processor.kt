@@ -25,7 +25,7 @@ class Processor : AbstractProcessor() {
 
         // Create spec.json
         roundEnv.rootElements.forEach {
-            it.accept(Visitor(swagger), null)
+            it.accept(Visitor(swagger, processingEnv.elementUtils, processingEnv.typeUtils), null)
         }
 
         File("spec.json").printWriter().use {
