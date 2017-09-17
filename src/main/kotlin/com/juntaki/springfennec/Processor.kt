@@ -1,6 +1,5 @@
 package com.juntaki.springfennec
 
-import com.google.auto.service.AutoService
 import io.swagger.annotations.Api
 import io.swagger.models.Swagger
 import io.swagger.util.Json
@@ -10,7 +9,6 @@ import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
 
-@AutoService(Processor::class)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("io.swagger.annotations.*", "org.springframework.web.bind.annotation.*")
 class Processor : AbstractProcessor() {
