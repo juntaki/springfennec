@@ -1,6 +1,9 @@
 package com.juntaki.springfennec
 
 import io.swagger.annotations.ApiParam
+import io.swagger.models.ComposedModel
+import io.swagger.models.Model
+import io.swagger.models.Swagger
 import io.swagger.models.parameters.Parameter
 import io.swagger.models.parameters.QueryParameter
 import io.swagger.models.parameters.RefParameter
@@ -15,6 +18,7 @@ import javax.lang.model.util.Types
 
 
 class ParamVisitor(
+        private val swagger: Swagger,
         private val parameters: MutableList<Parameter>,
         private val elementUtils: Elements,
         private val typeUtils: Types
@@ -28,7 +32,9 @@ class ParamVisitor(
             param = QueryParameter()
             param.name = e.toString()
         } else {
-            param = RefParameter(e.asType().toString())
+            val modelName = e.asType().toString()
+            param = RefParameter(modelName)
+            swagger.addDefinition(modelName, ComposedModel())
         }
 
         // Check ApiParam annotation
@@ -36,7 +42,7 @@ class ParamVisitor(
         apiParam?.let {
             param.required = it.required
             param.isReadOnly = it.readOnly
-            param.name = it.name
+            //param.name = it.name
             param.access = it.access
             param.allowEmptyValue = it.allowEmptyValue
             param.description = it.value

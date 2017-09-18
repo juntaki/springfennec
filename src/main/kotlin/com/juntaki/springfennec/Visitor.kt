@@ -45,11 +45,12 @@ class Visitor(
                 val apiOperation: ApiOperation? = e.getAnnotation(ApiOperation::class.java)
                 apiOperation?.let {
                     operation.operationId = it.nickname
+                    if (operation.operationId.isEmpty()) operation.operationId = "todo"
                     operation.summary = it.value
                     operation.tags = it.tags.toList()
                 }
 
-                e.accept(ParamVisitor(operation.parameters, elementUtils, typeUtils), null)
+                e.accept(ParamVisitor(swagger, operation.parameters, elementUtils, typeUtils), null)
                 requestMapping.method.forEach {
                     when(it) {
                         RequestMethod.DELETE -> path.delete = operation
