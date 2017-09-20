@@ -41,11 +41,16 @@ class FunctionVisitor(
                 // one method is one operation
                 val operation = Operation()
 
+                operation.consumes = requestMapping.consumes.asList()
+                operation.produces = requestMapping.produces.asList()
+
                 // summary, nickname
                 val apiOperation: ApiOperation? = e.getAnnotation(ApiOperation::class.java)
                 apiOperation?.let {
                     operation.operationId = it.nickname
-                    if (operation.operationId.isEmpty()) operation.operationId = "todo"
+                    if (operation.operationId.isEmpty()) {
+                        operation.operationId = "todo"
+                    }
                     operation.summary = it.value
                     operation.tags = it.tags.toList()
                 }

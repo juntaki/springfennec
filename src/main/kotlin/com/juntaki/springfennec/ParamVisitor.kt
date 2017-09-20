@@ -1,11 +1,9 @@
 package com.juntaki.springfennec
 
 import io.swagger.annotations.ApiParam
-import io.swagger.models.RefModel
 import io.swagger.models.Swagger
 import io.swagger.models.parameters.*
 import io.swagger.models.properties.*
-import io.swagger.util.ParameterProcessor
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
@@ -86,7 +84,7 @@ class ParamVisitor(
         TODO("map")
     }
 
-    private fun springAnnotatedParam(element :VariableElement): Parameter {
+    private fun createParamBySpringAnnotation(element :VariableElement): Parameter {
         var param: Parameter
         var annotated = false
         //Default is query parameter. TODO: Check Spring Documentation.
@@ -96,6 +94,9 @@ class ParamVisitor(
         queryParamAnnotation?.let {
             annotated = true
             param = QueryParameter()
+            param.name = it.name
+            if (param.name.isEmpty()) param.name = element.toString()
+            param.required = it.required
         }
 
         val pathParamAnnotation = element.getAnnotation(PathVariable::class.java)
@@ -103,6 +104,9 @@ class ParamVisitor(
             if (annotated) Exception("Parameter has multiple annotation")
             annotated = true
             param = PathParameter()
+            param.name = it.name
+            if (param.name.isEmpty()) param.name = element.toString()
+            param.required = it.required
         }
 
         val headerParamAnnotation = element.getAnnotation(RequestHeader::class.java)
@@ -110,6 +114,9 @@ class ParamVisitor(
             if (annotated) Exception("Parameter has multiple annotation")
             annotated = true
             param = HeaderParameter()
+            param.name = it.name
+            if (param.name.isEmpty()) param.name = element.toString()
+            param.required = it.required
         }
 
         val bodyParamAnnotation = element.getAnnotation(RequestBody::class.java)
@@ -117,28 +124,28 @@ class ParamVisitor(
             if (annotated) Exception("Parameter has multiple annotation")
             annotated = true
             param = BodyParameter()
+            param.required = it.required
         }
 
         return param
     }
 
-//    private fun addSwaggerAnnotation(param: Parameter) {
-//        // Check ApiParam annotation
-//        val apiParam = element.getAnnotation(ApiParam::class.java)
-//        apiParam?.let {
-//            param.isReadOnly = it.readOnly
-//            param.access = it.access
-//            param.allowEmptyValue = it.allowEmptyValue
-//            param.description = it.value
-//        }
-//    }
+    private fun addSwaggerAnnotation(element: VariableElement, param: Parameter) {
+        // Check ApiParam annotation
+        val apiParam = element.getAnnotation(ApiParam::class.java)
+        apiParam?.let {
+            param.isReadOnly = it.readOnly
+            param.access = it.access
+            param.allowEmptyValue = it.allowEmptyValue
+            param.description = it.value
+        }
+    }
 
     override fun visitVariable(e: VariableElement?, p: Void?): Void? {
         // Get empty parameter
-        val param = springAnnotatedParam(e!!)
+        val param = createParamBySpringAnnotation(e!!)
+        addSwaggerAnnotation(e, param)
         val property = getProperty(e.asType())
-
-        
 
         if (param is SerializableParameter) {
             when (property){
