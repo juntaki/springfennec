@@ -16,24 +16,29 @@ class FunctionVisitor(
         private val swagger: Swagger,
         private val elementUtils: Elements,
         private val typeUtils: Types
-) : ElementScanner8<Void?, Void?>() {
-    val context = Context()
+) : ElementScanner8<Unit?, Unit?>() {
+    var currentPath = ""
     // Class
-    override fun visitType(e: TypeElement?, p: Void?): Void? {
+    override fun visitType(e: TypeElement?, p: Unit?): Unit? {
         val requestMapping: RequestMapping? = e!!.getAnnotation(RequestMapping::class.java)
-        requestMapping?.let {
-            // Add base mapping
+        if (requestMapping != null) {
+            requestMapping.value.forEach {
+                currentPath = it
+                super.visitType(e, p)
+            }
+        } else {
+            super.visitType(e, p)
         }
-        return super.visitType(e, p)
+        return Unit
     }
 
     // Function
-    override fun visitExecutable(e: ExecutableElement?, p: Void?): Void? {
+    override fun visitExecutable(e: ExecutableElement?, p: Unit?): Unit? {
         val requestMapping: RequestMapping? = e!!.getAnnotation(RequestMapping::class.java)
         requestMapping?.let {
             requestMapping.value.forEach {
                 // path
-                var path = swagger.getPath(context.currentPath + it)
+                var path = swagger.getPath(currentPath + it)
                 if (path == null) {
                     path = Path()
                 }
@@ -68,7 +73,7 @@ class FunctionVisitor(
                         RequestMethod.TRACE -> TODO("Not implemented")
                     }
                 }
-                swagger.path(context.currentPath + it ,path)
+                swagger.path(currentPath + it ,path)
             }
         }
         return super.visitExecutable(e, p)
