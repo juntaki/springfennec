@@ -1,6 +1,5 @@
 package com.juntaki.springfennec
 
-import io.swagger.annotations.Api
 import io.swagger.models.Swagger
 import io.swagger.util.Json
 import java.io.File
@@ -25,7 +24,7 @@ class Processor : AbstractProcessor() {
 
         // Create spec.json
         roundEnv.rootElements.forEach {
-            it.accept(Visitor(swagger, processingEnv.elementUtils, processingEnv.typeUtils), null)
+            it.accept(FunctionVisitor(swagger, processingEnv.elementUtils, processingEnv.typeUtils), null)
         }
 
         File("spec.json").printWriter().use {

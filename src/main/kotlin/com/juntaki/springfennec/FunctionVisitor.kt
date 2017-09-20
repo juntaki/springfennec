@@ -12,7 +12,7 @@ import javax.lang.model.util.ElementScanner8
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
 
-class Visitor(
+class FunctionVisitor(
         private val swagger: Swagger,
         private val elementUtils: Elements,
         private val typeUtils: Types
