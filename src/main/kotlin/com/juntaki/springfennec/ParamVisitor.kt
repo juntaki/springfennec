@@ -165,9 +165,6 @@ class ParamVisitor(
             if (property is RefProperty) swagger.addDefinition(property.`$ref`, model)
         }
 
-        println(e.asType())
-        println(property)
-
         parameters.add(param)
         return super.visitVariable(e, p)
     }
