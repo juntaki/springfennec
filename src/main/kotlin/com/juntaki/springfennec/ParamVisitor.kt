@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
+import javax.lang.model.element.ElementKind
+import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
@@ -33,7 +35,8 @@ class ParamVisitor(
         if (isAssignable(tm, "java.time.LocalDateTime") ||
                 isAssignable(tm,"java.time.ZonedDateTime") ||
                 isAssignable(tm,"java.time.OffsetDateTime") ||
-                isAssignable(tm,"java.util.Date") ){
+                isAssignable(tm,"java.util.Date") ||
+                isAssignable(tm, "org.joda.time.DateTime")){
             return DateTimeProperty()
         }
         if (isAssignable(tm, "java.time.LocalDate")){
@@ -82,7 +85,7 @@ class ParamVisitor(
         refProperty.`$ref` = tm.toString()
         return refProperty
 
-        TODO("map")
+        TODO("map? not implemented")
     }
 
     private fun createParamBySpringAnnotation(element :VariableElement): Parameter {
@@ -152,6 +155,10 @@ class ParamVisitor(
 
         val typeElement = elementUtils.getTypeElement(className)
         ElementFilter.fieldsIn(typeElement.enclosedElements).forEach{
+            // enum class cannot converted to swagger spec automatically.
+            // See ApiParam.allowableValues
+            if (elementUtils.getTypeElement(it.asType().toString())?.kind == ElementKind.ENUM) return@forEach
+
             val fieldProperty = getProperty(it.asType())
             propertyMap[it.toString()] = fieldProperty
 
