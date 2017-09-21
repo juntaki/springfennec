@@ -12,6 +12,7 @@ import javax.lang.model.element.VariableElement
 import javax.lang.model.type.ArrayType
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.TypeMirror
+import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.ElementScanner8
 import javax.lang.model.util.Elements
 import javax.lang.model.util.Types
@@ -141,6 +142,32 @@ class ParamVisitor(
         }
     }
 
+    private fun addDefinition(className: String) {
+        // Check if already defined
+        swagger.definitions?.get(className)?.let { return }
+
+        // Create concrete definition
+
+        val propertyMap = mutableMapOf<String, Property>()
+
+        val typeElement = elementUtils.getTypeElement(className)
+        ElementFilter.fieldsIn(typeElement.enclosedElements).forEach{
+            val fieldProperty = getProperty(it.asType())
+            propertyMap[it.toString()] = fieldProperty
+
+            if(fieldProperty is RefProperty && fieldProperty.simpleRef != className) {
+                addDefinition(fieldProperty.simpleRef)
+            }
+        }
+
+        val objectProperty = ObjectProperty()
+        objectProperty.name = className
+        val model = PropertyBuilder.toModel(objectProperty)!!
+        model.properties = propertyMap
+
+        swagger.addDefinition(className, model)
+    }
+
     override fun visitVariable(e: VariableElement?, p: Void?): Void? {
         // Get empty parameter
         val param = createParamBySpringAnnotation(e!!)
@@ -160,9 +187,10 @@ class ParamVisitor(
                 }
             }
         } else if (param is BodyParameter){
-            val model = PropertyBuilder.toModel(property)
-            param.schema = model
-            if (property is RefProperty) swagger.addDefinition(property.`$ref`, model)
+            param.schema = PropertyBuilder.toModel(property)
+            if (property is RefProperty) {
+                addDefinition(property.simpleRef)
+            }
         }
 
         parameters.add(param)
