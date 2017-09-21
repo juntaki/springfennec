@@ -18,6 +18,8 @@ class FunctionVisitor(
         private val typeUtils: Types
 ) : ElementScanner8<Unit?, Unit?>() {
     var currentPath = ""
+    var definedOperationIds = mutableListOf<String>()
+
     // Class
     override fun visitType(e: TypeElement?, p: Unit?): Unit? {
         val requestMapping: RequestMapping? = e!!.getAnnotation(RequestMapping::class.java)
@@ -34,43 +36,51 @@ class FunctionVisitor(
 
     // Function
     override fun visitExecutable(e: ExecutableElement?, p: Unit?): Unit? {
+        fun setUniqueOperationId(operation: Operation, operationId:String):Operation {
+            definedOperationIds.find { it == operationId }?.let { throw Exception("Duplicate operationId: " + operationId) }
+            definedOperationIds.add(operationId)
+            operation.operationId = operationId
+            return operation
+        }
+
         val requestMapping: RequestMapping? = e!!.getAnnotation(RequestMapping::class.java)
         requestMapping?.let {
             requestMapping.value.forEach {
-                // path
-                var path = swagger.getPath(currentPath + it)
-                if (path == null) {
-                    path = Path()
-                }
+                // if already defined path, overwrite it.
+                var path = swagger.getPath(currentPath + it)?: Path()
 
-                // one method is one operation
+                // one method means one operation, but one operationId is per method
                 val operation = Operation()
 
                 operation.consumes = requestMapping.consumes.asList()
                 operation.produces = requestMapping.produces.asList()
 
-                // summary, nickname
                 val apiOperation: ApiOperation? = e.getAnnotation(ApiOperation::class.java)
                 apiOperation?.let {
-                    operation.operationId = it.nickname
-                    if (operation.operationId.isEmpty()) {
-                        operation.operationId = "todo"
-                    }
                     operation.summary = it.value
                     operation.tags = it.tags.toList()
-                }
 
-                e.accept(ParamVisitor(swagger, operation.parameters, elementUtils, typeUtils), null)
-                requestMapping.method.forEach {
-                    when(it) {
-                        RequestMethod.DELETE -> path.delete = operation
-                        RequestMethod.GET -> path.get = operation
-                        RequestMethod.OPTIONS -> path.options = operation
-                        RequestMethod.PATCH -> path.patch = operation
-                        RequestMethod.POST -> path.post = operation
-                        RequestMethod.PUT -> path.put = operation
-                        RequestMethod.HEAD -> path.head = operation
-                        RequestMethod.TRACE -> TODO("Not implemented")
+                    // set parameters
+                    e.accept(ParamVisitor(swagger, operation.parameters, elementUtils, typeUtils), null)
+
+                    // Set operationId in the following manner.
+                    // 1. nickname, if it defined (you should not use multiple requestMapping)
+                    // 2. function name: findPetsByTags
+                    // TODO: 3. (request method) + (1. or 2.): e.g. GETfindPetsByTags, if multiple request method is defined on one function.
+                    // TODO: more option
+                    val operationId = if(it.nickname.isEmpty()) e.simpleName.toString() else it.nickname
+
+                    requestMapping.method.forEach {
+                        when(it) {
+                            RequestMethod.DELETE -> path.delete = setUniqueOperationId(operation, operationId)
+                            RequestMethod.GET -> path.get = setUniqueOperationId(operation, operationId)
+                            RequestMethod.OPTIONS -> path.options = setUniqueOperationId(operation, operationId)
+                            RequestMethod.PATCH -> path.patch = setUniqueOperationId(operation, operationId)
+                            RequestMethod.POST -> path.post = setUniqueOperationId(operation, operationId)
+                            RequestMethod.PUT -> path.put = setUniqueOperationId(operation, operationId)
+                            RequestMethod.HEAD -> path.head = setUniqueOperationId(operation, operationId)
+                            RequestMethod.TRACE -> TODO("Not implemented")
+                        }
                     }
                 }
                 swagger.path(currentPath + it ,path)

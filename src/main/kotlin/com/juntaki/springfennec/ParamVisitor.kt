@@ -156,7 +156,7 @@ class ParamVisitor(
         val typeElement = elementUtils.getTypeElement(className)
         ElementFilter.fieldsIn(typeElement.enclosedElements).forEach{
             // enum class cannot converted to swagger spec automatically.
-            // See ApiParam.allowableValues
+            // ApiParam.allowableValues should be used, but not implemented.
             if (elementUtils.getTypeElement(it.asType().toString())?.kind == ElementKind.ENUM) return@forEach
 
             val fieldProperty = getProperty(it.asType())
