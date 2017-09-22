@@ -100,8 +100,7 @@ class ParamVisitor(
         val refProperty = RefProperty()
         refProperty.`$ref` = tm.toString()
         return refProperty
-
-        TODO("map? not implemented")
+        //TODO map is not implemented
     }
 
     private fun createParamBySpringAnnotation(element :VariableElement): Parameter {

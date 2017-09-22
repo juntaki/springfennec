@@ -1,5 +1,23 @@
 group 'com.juntaki'
-version '1.0-SNAPSHOT'
+version '1.0'
+description = "Swagger spec.json generator for Spring annotation"
+
+//set build variables based on build type (release, continuous integration, development)
+def isDevBuild
+def isCiBuild
+def isReleaseBuild
+def sonatypeRepositoryUrl
+if (hasProperty("release")) {
+    isReleaseBuild = true
+    sonatypeRepositoryUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+} else if (hasProperty("ci")) {
+    isCiBuild = true
+    version += "-SNAPSHOT"
+    sonatypeRepositoryUrl = "https://oss.sonatype.org/content/repositories/snapshots/"
+} else {
+    isDevBuild = true
+    version += "-SNAPSHOT"
+}
 
 buildscript {
     ext.kotlin_version = '1.1.4-3'
@@ -12,6 +30,8 @@ buildscript {
     }
 }
 
+apply plugin: 'maven'
+apply plugin: "signing"
 apply plugin: 'kotlin'
 apply plugin: 'kotlin-kapt'
 
@@ -26,7 +46,7 @@ jar {
 dependencies {
     compile 'io.swagger:swagger-core:1.5.16'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
-    compile group: 'org.springframework.boot', name: 'spring-boot-starter-web', version:'1.4.7.RELEASE'
+    compile 'org.springframework.boot:spring-boot-starter-web:1.4.7.RELEASE'
 }
 
 compileKotlin {
@@ -34,4 +54,54 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+signing {
+    required { isReleaseBuild }
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        if (isDevBuild) {
+            mavenLocal()
+        }
+        else {
+            mavenDeployer {
+                if(isReleaseBuild) {
+                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                }
+
+                repository(url: sonatypeRepositoryUrl) {
+                    authentication(userName: sonatypeUsername, password: sonatypePassword)
+                }
+
+                pom.project {
+                    name 'Springfennec'
+                    packaging 'jar'
+                    description 'Swagger spec.json generator for Spring annotation'
+                    url 'https://github.com/juntaki/springfennec"'
+
+                    scm {
+                        url "https://github.com/juntaki/springfennec"
+                        connection "https://github.com/juntaki/springfennec"
+                        developerConnection "https://github.com/juntaki/springfennec"
+                    }
+                    licenses {
+                        license {
+                            name 'Apache License, Version 2.0'
+                            url 'http://www.apache.org/licenses/LICENSE-2.0'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id 'juntaki'
+                            name 'Jumpei Takiyasu'
+                            email 'me@juntaki.com'
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
