@@ -16,6 +16,7 @@
 
 package com.juntaki.springfennec
 
+import com.juntaki.springfennec.util.PropertyUtil
 import io.swagger.models.Swagger
 import io.swagger.util.Json
 import java.io.File
@@ -37,10 +38,11 @@ class Processor : AbstractProcessor() {
         processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Springfennec is running")
 
         val swagger = Swagger()
+        val propertyUtil = PropertyUtil( processingEnv.elementUtils, processingEnv.typeUtils)
 
         // Create spec.json
         roundEnv.rootElements.forEach {
-            it.accept(FunctionVisitor(swagger, processingEnv.elementUtils, processingEnv.typeUtils), null)
+            it.accept(FunctionVisitor(swagger,propertyUtil), null)
         }
 
         File("spec.json").printWriter().use {
