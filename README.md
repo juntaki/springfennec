@@ -35,7 +35,8 @@ Use apt or kapt to work Springfennec at build.
 Add the following line to build.Gradle.
 
 ~~~
-
+compileOnly 'com.juntaki:springfennec:{version}'
+kapt 'com.juntaki:springfennec:{version}'
 ~~~
 
 ### Springfennec annotation
