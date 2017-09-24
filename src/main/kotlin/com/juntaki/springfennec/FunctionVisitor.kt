@@ -17,22 +17,18 @@
 package com.juntaki.springfennec
 
 import com.juntaki.springfennec.util.PropertyUtil
-import io.swagger.annotations.Api
 import io.swagger.annotations.ApiOperation
 import io.swagger.annotations.ApiResponses
 import io.swagger.models.Operation
 import io.swagger.models.Path
 import io.swagger.models.Response
 import io.swagger.models.Swagger
-import org.springframework.core.annotation.AnnotatedElementUtils
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
-import javax.lang.model.element.*
+import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.TypeElement
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.util.ElementScanner8
-import javax.lang.model.util.Elements
-import javax.lang.model.util.Types
-import javax.validation.constraints.Null
 
 class FunctionVisitor(
         private val swagger: Swagger,
@@ -58,9 +54,9 @@ class FunctionVisitor(
 
     // Function
     override fun visitExecutable(e: ExecutableElement?, p: Unit?): Unit? {
-        e?: throw NullPointerException()
+        e ?: throw NullPointerException()
 
-        fun setUniqueOperationId(operation: Operation, operationId:String):Operation {
+        fun setUniqueOperationId(operation: Operation, operationId: String): Operation {
             definedOperationIds.find { it == operationId }?.let { throw Exception("Duplicate operationId: " + operationId) }
             definedOperationIds.add(operationId)
             operation.operationId = operationId
@@ -97,7 +93,7 @@ class FunctionVisitor(
             // 2. function name: findPetsByTags
             // TODO: 3. (request method) + (1. or 2.): e.g. GETfindPetsByTags, if multiple request method is defined on one function.
             // TODO: more option
-            if(it.nickname.isNotEmpty()) operationNickname = it.nickname
+            if (it.nickname.isNotEmpty()) operationNickname = it.nickname
         }
 
         val requestMapping: RequestMapping? = e.getAnnotation(RequestMapping::class.java)
@@ -109,17 +105,17 @@ class FunctionVisitor(
 
                 // If path is already defined, use it.
                 // Even if the same request methods was defined, build will be error by spring.
-                val path = swagger.getPath(currentPath + it)?: Path()
-                val operationId = if(operationNickname != null) operationNickname!! else e.simpleName.toString()
+                val path = swagger.getPath(currentPath + it) ?: Path()
+                val operationId = if (operationNickname != null) operationNickname!! else e.simpleName.toString()
 
-                if(requestMapping.consumes.isNotEmpty()) operation.consumes = requestMapping.consumes.asList()
-                if(requestMapping.produces.isNotEmpty()) operation.produces = requestMapping.produces.asList()
+                if (requestMapping.consumes.isNotEmpty()) operation.consumes = requestMapping.consumes.asList()
+                if (requestMapping.produces.isNotEmpty()) operation.produces = requestMapping.produces.asList()
 
                 // set parameters
                 e.accept(ParamVisitor(swagger, operation.parameters, propertyUtil), null)
 
                 requestMapping.method.forEach {
-                    when(it) {
+                    when (it) {
                         RequestMethod.DELETE -> path.delete = setUniqueOperationId(operation, operationId)
                         RequestMethod.GET -> path.get = setUniqueOperationId(operation, operationId)
                         RequestMethod.OPTIONS -> path.options = setUniqueOperationId(operation, operationId)
@@ -130,7 +126,7 @@ class FunctionVisitor(
                         RequestMethod.TRACE -> TODO("Not implemented")
                     }
                 }
-                swagger.path(currentPath + it ,path)
+                swagger.path(currentPath + it, path)
             }
         }
         return super.visitExecutable(e, p)

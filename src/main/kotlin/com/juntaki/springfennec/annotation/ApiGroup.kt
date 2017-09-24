@@ -17,15 +17,12 @@
 package com.juntaki.springfennec.annotation
 
 import io.swagger.annotations.SwaggerDefinition
-import java.lang.annotation.ElementType
-import java.lang.annotation.RetentionPolicy
 
-@Target(AnnotationTarget.TYPE)
 @Retention(AnnotationRetention.RUNTIME)
 @Repeatable
-annotation class ApiGroup (
+annotation class ApiGroup(
         // regex for path not include basePath
         val value: Array<String> = arrayOf(".*"),
         val name: String = "",
-        val apiInfo : SwaggerDefinition = SwaggerDefinition()
+        val apiInfo: SwaggerDefinition = SwaggerDefinition()
 )

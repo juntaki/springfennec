@@ -19,12 +19,9 @@ package com.juntaki.springfennec
 import com.juntaki.springfennec.annotation.ApiGroup
 import com.juntaki.springfennec.util.PropertyUtil
 import io.swagger.annotations.SwaggerDefinition
-import io.swagger.models.ExternalDocs
-import io.swagger.models.Scheme
-import io.swagger.models.Swagger
-import io.swagger.models.Tag
-import io.swagger.models.auth.ApiKeyAuthDefinition
-import io.swagger.models.auth.BasicAuthDefinition
+import io.swagger.models.*
+import io.swagger.models.auth.In
+import io.swagger.util.BaseReaderUtils
 import io.swagger.util.Json
 import java.io.File
 import javax.annotation.processing.AbstractProcessor
@@ -34,47 +31,69 @@ import javax.annotation.processing.SupportedSourceVersion
 import javax.lang.model.SourceVersion
 import javax.lang.model.element.TypeElement
 import javax.tools.Diagnostic
-import io.swagger.util.BaseReaderUtils
-import io.swagger.models.auth.In
-import io.swagger.models.auth.OAuth2Definition
-import org.apache.tomcat.jni.Lock.name
-
-
-
 
 
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-@SupportedAnnotationTypes("io.swagger.annotations.*", "org.springframework.web.bind.annotation.*")
+@SupportedAnnotationTypes("com.juntaki.springfennec.annotation.*")
 class Processor : AbstractProcessor() {
     var checked = false
 
     override fun process(annotations: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
         val propertyUtil = PropertyUtil(processingEnv.elementUtils, processingEnv.typeUtils)
 
-        fun createSwaggerByConfig(config: SwaggerDefinition?): Swagger{
+        // This function is from swagger-core readSwaggerConfig(), rewrite to Kotlin by juntaki.
+        fun createSwaggerByConfig(config: SwaggerDefinition?): Swagger {
             val swagger = Swagger()
             config?.let {
-                if (!config.basePath.isEmpty()) {
+                if (config.basePath.isNotEmpty()) {
                     swagger.basePath = config.basePath
                 }
 
-                if (!config.host.isEmpty()) {
+                if (config.host.isNotEmpty()) {
                     swagger.host = config.host
                 }
+                swagger.info = swagger.info ?: io.swagger.models.Info()
 
-                // readInfoConfig(config)
-                swagger.info.apply {
-                    description = config.info.description
-                    contact.email = config.info.contact.email
-                    contact.name = config.info.contact.name
-                    contact.url = config.info.contact.url
-                    license.name = config.info.license.name
-                    license.url = config.info.license.url
-                    termsOfService = config.info.termsOfService
-                    title = config.info.title
-                    version = config.info.version
-                    // TODO: config.info.extensions
+                if (config.info.description.isNotEmpty()) {
+                    swagger.info.description = config.info.description
                 }
+
+                if (config.info.termsOfService.isNotEmpty()) {
+                    swagger.info.termsOfService = config.info.termsOfService
+                }
+
+                if (config.info.title.isNotEmpty()) {
+                    swagger.info.title = config.info.title
+                }
+
+                if (config.info.version.isNotEmpty()) {
+                    swagger.info.version = config.info.version
+                }
+
+                if (config.info.contact.name.isNotEmpty()) {
+                    swagger.info.contact = swagger.info.contact ?: Contact()
+                    swagger.info.contact.name = config.info.contact.name
+                }
+                if (config.info.contact.email.isNotEmpty()) {
+                    swagger.info.contact = swagger.info.contact ?: Contact()
+                    swagger.info.contact.email = config.info.contact.email
+                }
+
+                if (config.info.contact.url.isNotEmpty()) {
+                    swagger.info.contact = swagger.info.contact ?: Contact()
+                    swagger.info.contact.url = config.info.contact.url
+                }
+
+                if (config.info.license.name.isNotEmpty()) {
+                    swagger.info.license = swagger.info.license ?: License()
+
+                    swagger.info.license.name = config.info.license.name
+                    if ((config.info.license.url.isNotEmpty())) {
+                        swagger.info.license.url = config.info.license.url
+                    }
+                }
+
+                swagger.info.vendorExtensions.putAll(BaseReaderUtils.parseExtensions(config.info.extensions))
 
                 config.consumes.forEach {
                     if (it.isNotEmpty()) {
@@ -91,7 +110,7 @@ class Processor : AbstractProcessor() {
                     var oAuth2Definition = io.swagger.models.auth.OAuth2Definition()
                     val flow = it.flow
 
-                    oAuth2Definition = when(flow){
+                    oAuth2Definition = when (flow) {
                         io.swagger.annotations.OAuth2Definition.Flow.ACCESS_CODE ->
                             oAuth2Definition.accessCode(it.authorizationUrl, it.tokenUrl)
                         io.swagger.annotations.OAuth2Definition.Flow.APPLICATION ->
@@ -110,7 +129,7 @@ class Processor : AbstractProcessor() {
                     swagger.addSecurityDefinition(it.key, oAuth2Definition)
                 }
 
-                for (apiKeyAuthConfigs in arrayOf<Array<io.swagger.annotations.ApiKeyAuthDefinition>>(config.securityDefinition.apiKeyAuthDefintions, config.securityDefinition.apiKeyAuthDefinitions)) {
+                for (apiKeyAuthConfigs in arrayOf(config.securityDefinition.apiKeyAuthDefintions, config.securityDefinition.apiKeyAuthDefinitions)) {
                     for (apiKeyAuthConfig in apiKeyAuthConfigs) {
                         val apiKeyAuthDefinition = io.swagger.models.auth.ApiKeyAuthDefinition()
 
@@ -122,7 +141,7 @@ class Processor : AbstractProcessor() {
                     }
                 }
 
-                for (basicAuthConfigs in arrayOf<Array<io.swagger.annotations.BasicAuthDefinition>>(config.securityDefinition.basicAuthDefinions, config.securityDefinition.basicAuthDefinitions)) {
+                for (basicAuthConfigs in arrayOf(config.securityDefinition.basicAuthDefinions, config.securityDefinition.basicAuthDefinitions)) {
                     for (basicAuthConfig in basicAuthConfigs) {
                         val basicAuthDefinition = io.swagger.models.auth.BasicAuthDefinition()
 
@@ -154,7 +173,7 @@ class Processor : AbstractProcessor() {
                         tag.description = it.description
 
                         if (!it.externalDocs.value.isEmpty()) {
-                            tag.externalDocs = ExternalDocs(it.externalDocs.value,it.externalDocs.url)
+                            tag.externalDocs = ExternalDocs(it.externalDocs.value, it.externalDocs.url)
                         }
                         tag.vendorExtensions.putAll(BaseReaderUtils.parseExtensions(it.extensions))
                         swagger.addTag(tag)
@@ -174,7 +193,7 @@ class Processor : AbstractProcessor() {
         fun createSpec(specFileName: String, pathRegexString: String, config: SwaggerDefinition?) {
             val swagger = createSwaggerByConfig(config)
 
-            val pathRegex = Regex(pathRegexString) // TODO: use it
+            val pathRegex = Regex(pathRegexString)
             roundEnv.rootElements.forEach {
                 it.accept(FunctionVisitor(swagger, propertyUtil, pathRegex), null)
             }

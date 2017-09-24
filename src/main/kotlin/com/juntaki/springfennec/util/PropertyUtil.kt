@@ -32,7 +32,7 @@ class PropertyUtil(
 ) {
     fun doEachClassField(className: String, fn: (VariableElement) -> Unit) {
         val typeElement = elementUtils.getTypeElement(className)
-        ElementFilter.fieldsIn(typeElement.enclosedElements).forEach{
+        ElementFilter.fieldsIn(typeElement.enclosedElements).forEach {
             // enum class cannot converted to swagger spec automatically.
             // ApiParam.allowableValues should be used, but not implemented.
             if (elementUtils.getTypeElement(it.asType().toString())?.kind == ElementKind.ENUM) return@forEach
@@ -47,34 +47,34 @@ class PropertyUtil(
         }
 
         if (isAssignable(tm, "java.time.LocalDateTime") ||
-                isAssignable(tm,"java.time.ZonedDateTime") ||
-                isAssignable(tm,"java.time.OffsetDateTime") ||
-                isAssignable(tm,"java.util.Date") ||
-                isAssignable(tm, "org.joda.time.DateTime")){
+                isAssignable(tm, "java.time.ZonedDateTime") ||
+                isAssignable(tm, "java.time.OffsetDateTime") ||
+                isAssignable(tm, "java.util.Date") ||
+                isAssignable(tm, "org.joda.time.DateTime")) {
             return DateTimeProperty()
         }
-        if (isAssignable(tm, "java.time.LocalDate")){
+        if (isAssignable(tm, "java.time.LocalDate")) {
             return DateProperty()
         }
-        if (isAssignable(tm, "java.lang.Boolean")){
+        if (isAssignable(tm, "java.lang.Boolean")) {
             return BooleanProperty()
         }
-        if (isAssignable(tm, "java.lang.Byte")){
+        if (isAssignable(tm, "java.lang.Byte")) {
             return ByteArrayProperty()
         }
-        if (isAssignable(tm, "java.lang.Integer")){
+        if (isAssignable(tm, "java.lang.Integer")) {
             return IntegerProperty()
         }
-        if (isAssignable(tm, "java.lang.Long")){
+        if (isAssignable(tm, "java.lang.Long")) {
             return LongProperty()
         }
-        if (isAssignable(tm, "java.lang.Float")){
+        if (isAssignable(tm, "java.lang.Float")) {
             return FloatProperty()
         }
-        if (isAssignable(tm, "java.lang.Double")){
+        if (isAssignable(tm, "java.lang.Double")) {
             return DoubleProperty()
         }
-        if (isAssignable(tm, "java.lang.String")){
+        if (isAssignable(tm, "java.lang.String")) {
             return StringProperty()
         }
         if (isAssignable(tm, "org.springframework.web.multipart.MultipartFile")) {
@@ -83,7 +83,7 @@ class PropertyUtil(
 
         // Array
         val listRegex = Regex("""^java.util.List|^java.util.ArrayList""")
-        if (tm is DeclaredType && listRegex.containsMatchIn(tm.toString())){
+        if (tm is DeclaredType && listRegex.containsMatchIn(tm.toString())) {
             val arrayProperty = ArrayProperty()
             arrayProperty.items = getProperty(tm.typeArguments[0])
             return arrayProperty
@@ -96,8 +96,8 @@ class PropertyUtil(
 
         // Map
         val mapRegex = Regex("""^java.util.Map""")
-        if (tm is DeclaredType && mapRegex.containsMatchIn(tm.toString())){
-            if (!isAssignable(tm.typeArguments[0], "java.lang.String")){
+        if (tm is DeclaredType && mapRegex.containsMatchIn(tm.toString())) {
+            if (!isAssignable(tm.typeArguments[0], "java.lang.String")) {
                 TODO("Not implemented.")
                 // TODO: Read JSON Schema and https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#responses-definitions-object
             }
