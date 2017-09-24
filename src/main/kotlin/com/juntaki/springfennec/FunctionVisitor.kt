@@ -66,19 +66,14 @@ class FunctionVisitor(
         // One method means one operation, but an operationId is needed per method.
         val operation = Operation()
 
-        val response = e.getAnnotation(ApiResponses::class.java)
-        response?.let {
-            it.value.forEach {
-                val res = Response()
-                // res is org.springframework.http.ResponseEntity<T>, use T
-                val schema = propertyUtil.getProperty((e.returnType as DeclaredType).typeArguments[0])
-                // schema may be Void
-                schema?.let {
-                    res.schema = schema
-                    res.description = "OK"
-                    operation.addResponse("200", res)
-                }
-            }
+        val res = Response()
+        // res is org.springframework.http.ResponseEntity<T>, use T
+        val schema = propertyUtil.getProperty((e.returnType as DeclaredType).typeArguments[0])
+        // schema may be Void
+        schema?.let {
+            res.schema = schema
+            res.description = "OK"
+            operation.addResponse("200", res)
         }
 
         var operationNickname: String? = null
