@@ -36,9 +36,12 @@ import javax.tools.Diagnostic
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("com.juntaki.springfennec.annotation.*")
 class Processor : AbstractProcessor() {
-    var checked = false
+    private var checked = false
 
     override fun process(annotations: MutableSet<out TypeElement>, roundEnv: RoundEnvironment): Boolean {
+        // Only first round is enough.
+        if (checked) return true
+        checked = true
         val propertyUtil = PropertyUtil(processingEnv.elementUtils, processingEnv.typeUtils)
 
         // This function is from swagger-core readSwaggerConfig(), rewrite to Kotlin by juntaki.
@@ -198,15 +201,10 @@ class Processor : AbstractProcessor() {
                 it.accept(FunctionVisitor(swagger, propertyUtil, pathRegex), null)
             }
 
-            // TODO: use processingEnv.filer
             File(specFileName).printWriter().use {
                 Json.mapper()!!.writeValue(it, swagger)
             }
         }
-
-        // Only first round is enough.
-        if (checked) return true
-        checked = true
 
         // Check if annotation processor work
         processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Springfennec is running")
@@ -219,7 +217,7 @@ class Processor : AbstractProcessor() {
             apiGroups.forEach {
                 it.getAnnotationsByType(ApiGroup::class.java).forEach {
                     for (regexString in it.value) {
-                        createSpec("spec${it.name}.json", regexString, it.apiInfo)
+                        createSpec("spec_${it.name}.json", regexString, it.apiInfo)
                     }
                 }
             }
