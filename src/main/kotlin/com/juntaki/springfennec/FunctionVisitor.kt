@@ -36,7 +36,8 @@ import javax.validation.constraints.Null
 
 class FunctionVisitor(
         private val swagger: Swagger,
-        private val propertyUtil: PropertyUtil
+        private val propertyUtil: PropertyUtil,
+        private val pathRegex: Regex
 ) : ElementScanner8<Unit?, Unit?>() {
     var currentPath = ""
     var definedOperationIds = mutableListOf<String>()
@@ -103,6 +104,9 @@ class FunctionVisitor(
         requestMapping?.let {
             // it may just one...
             requestMapping.value.forEach {
+                // Ignore path if not match
+                if (!pathRegex.containsMatchIn(currentPath + it)) return@forEach
+
                 // If path is already defined, use it.
                 // Even if the same request methods was defined, build will be error by spring.
                 val path = swagger.getPath(currentPath + it)?: Path()

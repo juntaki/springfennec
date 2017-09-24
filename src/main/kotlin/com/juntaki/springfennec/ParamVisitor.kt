@@ -25,24 +25,16 @@ import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.bind.annotation.RequestParam
-import javax.lang.model.element.ElementKind
-import javax.lang.model.element.TypeElement
 import javax.lang.model.element.VariableElement
-import javax.lang.model.type.ArrayType
-import javax.lang.model.type.DeclaredType
-import javax.lang.model.type.TypeMirror
-import javax.lang.model.util.ElementFilter
 import javax.lang.model.util.ElementScanner8
-import javax.lang.model.util.Elements
-import javax.lang.model.util.Types
 
 
 class ParamVisitor(
         private val swagger: Swagger,
         private val parameters: MutableList<Parameter>,
-        private val propertyUtil:  PropertyUtil
-        ) : ElementScanner8<Void?, Void?>() {
-    private fun createParamBySpringAnnotation(element :VariableElement): Parameter {
+        private val propertyUtil: PropertyUtil
+) : ElementScanner8<Void?, Void?>() {
+    private fun createParamBySpringAnnotation(element: VariableElement): Parameter {
         var param: Parameter
         var annotated = false
         //Default is query parameter. TODO: Check Spring Documentation.
@@ -106,7 +98,7 @@ class ParamVisitor(
             val fieldProperty = propertyUtil.getProperty(e.asType())!!
             propertyMap[e.toString()] = fieldProperty
 
-            if(fieldProperty is RefProperty && fieldProperty.simpleRef != className) {
+            if (fieldProperty is RefProperty && fieldProperty.simpleRef != className) {
                 addDefinition(fieldProperty.simpleRef)
             }
         }
@@ -132,7 +124,7 @@ class ParamVisitor(
         val property = propertyUtil.getProperty(e.asType())!!
 
         if (param is SerializableParameter) {
-            when (property){
+            when (property) {
                 is RefProperty -> throw Exception("Not serializable parameter")
                 is ArrayProperty -> {
                     param.type = property.type
@@ -143,7 +135,7 @@ class ParamVisitor(
                     param.format = property.format
                 }
             }
-        } else if (param is BodyParameter){
+        } else if (param is BodyParameter) {
             param.schema = PropertyBuilder.toModel(property)
             if (property is RefProperty) {
                 addDefinition(property.simpleRef)
