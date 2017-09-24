@@ -67,13 +67,16 @@ class FunctionVisitor(
         val operation = Operation()
 
         val res = Response()
-        // res is org.springframework.http.ResponseEntity<T>, use T
-        val schema = propertyUtil.getProperty((e.returnType as DeclaredType).typeArguments[0])
-        // schema may be Void
-        schema?.let {
-            res.schema = schema
-            res.description = "OK"
-            operation.addResponse("200", res)
+        // res is org.springframework.http.ResponseEntity<T>, use T. or Void
+        val responseRegex = Regex("""^org.springframework.http.ResponseEntity""")
+        if (responseRegex.containsMatchIn(e.returnType.toString())) {
+            val schema = propertyUtil.getProperty((e.returnType as DeclaredType).typeArguments[0])
+            // schema may be Void
+            schema?.let {
+                res.schema = schema
+                res.description = "OK"
+                operation.addResponse("200", res)
+            }
         }
 
         var operationNickname: String? = null
