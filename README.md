@@ -1,27 +1,30 @@
 # Springfennec
 
-Springfennec generate spec.json suitable for the creation of client library by swagger-codegen.
-it has the following features. (compared to Springfox)
+[Swagger (OpenAPI 2.0)](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md) spec.json generator for the API client generation by [swagger-codegen](https://github.com/swagger-api/swagger-codegen).
+
+## Features 
+
+mainly compared with [Springfox](http://springfox.github.io/springfox/).
 
 * Predictable OperationId. build will fail if it isn't unique.
 * No duplicate of model name
-* Output spec.json as a file, bootRun isn't required.
-* Use Spring annotation than Swagger annotation,
+* Output spec.json as a file at build, server start isn't required.
+* Spring annotation than Swagger annotation, focus on the actual behaviour.
 
-On the contrary, it cannot have the following featue:
+You cannot do the following only with springfennec. Use [swagger-ui](https://github.com/swagger-api/swagger-ui).
 
-* Hosting swagger-ui
+* Hosting swagger-ui in App
 
-Although it supports major (as I think) annotaion, it still cannot cover all Spring functionality.
+Although Springfennec supports basic (as I think) Spring functionality, but it still cannot cover all of it.
 Please make a request by Pull request or Issue.
 
 ## How to work
 
 ### OperaionId
 
-nickname of @ApiOperaiton is OperaitonId if defined. or function name is used.
-In order to generate a predicatable OperationId, programmer have the responsibility to maintain its uniqueness. Therefore, suffix are not added by springfennec.
-If it doesn't become unique, the build will fail.
+If nickname in @ApiOperaiton annotaion is defined, it will be OperaitonId. If not, function name will be used.
+
+In order to generate a predicatable OperationId, programmer have the responsibility to maintain its uniqueness. Therefore, suffix are not added by springfennec. If it isn't unique in the API group, the build will just fail.
 
 ### Model name
 
@@ -48,7 +51,7 @@ For @SwaggerDefinition annotaion, refer to [Swagger-Core Annotations documentati
 
 ~~~
 @ApiGroup(value="^/pet/.*",        // regex for path (not include basePath)
-          name = "api_group_name", // output will be spec_${name}.json
+          name = "pet_api",        // output will be spec_${name}.json, e.g. spec_pet_api.json
           apiInfo = @SwaggerDefinition(...))
 ~~~
 
