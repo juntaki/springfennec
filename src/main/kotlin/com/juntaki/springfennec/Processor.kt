@@ -17,6 +17,7 @@
 package com.juntaki.springfennec
 
 import com.juntaki.springfennec.annotation.ApiGroup
+import com.juntaki.springfennec.annotation.ApiGroups
 import com.juntaki.springfennec.util.PropertyUtil
 import io.swagger.annotations.SwaggerDefinition
 import io.swagger.models.*
@@ -209,16 +210,33 @@ class Processor : AbstractProcessor() {
         // Check if annotation processor work
         processingEnv.messager.printMessage(Diagnostic.Kind.NOTE, "Springfennec is running")
 
-        val apiGroups = roundEnv.getElementsAnnotatedWith(ApiGroup::class.java)
+        val apiGroups = mutableListOf<ApiGroup>()
 
-        if (apiGroups == null || apiGroups.isEmpty()) {
+        // find ApiGroup and ApiGroups annotation
+        roundEnv.getElementsAnnotatedWith(ApiGroup::class.java)?.let {
+            it.forEach {
+                it.getAnnotationsByType(ApiGroup::class.java).forEach {
+                    it?.let { apiGroups.add(it) }
+                }
+            }
+        }
+        roundEnv.getElementsAnnotatedWith(ApiGroups::class.java)?.let {
+            it.forEach {
+                it.getAnnotationsByType(ApiGroups::class.java).forEach {
+                    it.value.forEach {
+                        apiGroups.add(it)
+                    }
+                }
+            }
+        }
+
+        if (apiGroups.isEmpty()) {
+            // it may be meaningless. should this annotation required?
             createSpec("spec.json", ".*", null)
         } else {
             apiGroups.forEach {
-                it.getAnnotationsByType(ApiGroup::class.java).forEach {
-                    for (regexString in it.value) {
-                        createSpec("spec_${it.name}.json", regexString, it.apiInfo)
-                    }
+                for (regexString in it.value) {
+                    createSpec("spec_${it.name}.json", regexString, it.apiInfo)
                 }
             }
         }

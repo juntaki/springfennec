@@ -47,11 +47,16 @@ class PropertyUtil(
             return typeUtils.isAssignable(tm, elementUtils.getTypeElement(className).asType())
         }
 
+        fun isSameClassName(tm: TypeMirror, className: String): Boolean {
+            return tm.toString() == className
+        }
+
         if (isAssignable(tm, "java.time.LocalDateTime") ||
                 isAssignable(tm, "java.time.ZonedDateTime") ||
                 isAssignable(tm, "java.time.OffsetDateTime") ||
                 isAssignable(tm, "java.util.Date") ||
-                isAssignable(tm, "org.joda.time.DateTime")) {
+                isSameClassName(tm, "org.joda.time.DateTime")
+                ) {
             return DateTimeProperty()
         }
         if (isAssignable(tm, "java.time.LocalDate")) {
@@ -78,7 +83,7 @@ class PropertyUtil(
         if (isAssignable(tm, "java.lang.String")) {
             return StringProperty()
         }
-        if (isAssignable(tm, "org.springframework.web.multipart.MultipartFile")) {
+        if (isSameClassName(tm, "org.springframework.web.multipart.MultipartFile")) {
             return FileProperty()
         }
 

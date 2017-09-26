@@ -22,10 +22,8 @@ import io.swagger.models.Operation
 import io.swagger.models.Path
 import io.swagger.models.Response
 import io.swagger.models.Swagger
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestMethod
+import org.springframework.web.bind.annotation.*
+import java.nio.file.Paths
 import javax.lang.model.element.ExecutableElement
 import javax.lang.model.element.TypeElement
 import javax.lang.model.type.DeclaredType
@@ -57,11 +55,117 @@ class FunctionVisitor(
     override fun visitExecutable(e: ExecutableElement?, p: Unit?): Unit? {
         e ?: throw NullPointerException()
 
-        fun setUniqueOperationId(operation: Operation, operationId: String): Operation {
-            definedOperationIds.find { it == operationId }?.let { throw Exception("Duplicate operationId: " + operationId) }
-            definedOperationIds.add(operationId)
-            operation.operationId = operationId
-            return operation
+        class RequestMappingData(
+                val name: String,
+                val path: Array<String>,
+                val method: Array<RequestMethod>,
+                val params: Array<String>,
+                val headers: Array<String>,
+                val consumes: Array<String>,
+                val produces: Array<String>
+        ) {
+            constructor(mapping: RequestMapping) : this(
+                    method = mapping.method,
+                    name = mapping.name,
+                    path = if (mapping.value.isNotEmpty()) mapping.value else mapping.path,
+                    params = mapping.params,
+                    headers = mapping.headers,
+                    consumes = mapping.consumes,
+                    produces = mapping.produces
+            )
+
+            constructor(mapping: GetMapping) : this(
+                    method = arrayOf(RequestMethod.GET),
+                    name = mapping.name,
+                    path = if (mapping.value.isNotEmpty()) mapping.value else mapping.path,
+                    params = mapping.params,
+                    headers = mapping.headers,
+                    consumes = mapping.consumes,
+                    produces = mapping.produces
+            )
+
+            constructor(mapping: PostMapping) : this(
+                    method = arrayOf(RequestMethod.POST),
+                    name = mapping.name,
+                    path = if (mapping.value.isNotEmpty()) mapping.value else mapping.path,
+                    params = mapping.params,
+                    headers = mapping.headers,
+                    consumes = mapping.consumes,
+                    produces = mapping.produces
+            )
+
+            constructor(mapping: PutMapping) : this(
+                    method = arrayOf(RequestMethod.PUT),
+                    name = mapping.name,
+                    path = if (mapping.value.isNotEmpty()) mapping.value else mapping.path,
+                    params = mapping.params,
+                    headers = mapping.headers,
+                    consumes = mapping.consumes,
+                    produces = mapping.produces
+            )
+
+            constructor(mapping: PatchMapping) : this(
+                    method = arrayOf(RequestMethod.PATCH),
+                    name = mapping.name,
+                    path = if (mapping.value.isNotEmpty()) mapping.value else mapping.path,
+                    params = mapping.params,
+                    headers = mapping.headers,
+                    consumes = mapping.consumes,
+                    produces = mapping.produces
+            )
+
+            constructor(mapping: DeleteMapping) : this(
+                    method = arrayOf(RequestMethod.DELETE),
+                    name = mapping.name,
+                    path = if (mapping.value.isNotEmpty()) mapping.value else mapping.path,
+                    params = mapping.params,
+                    headers = mapping.headers,
+                    consumes = mapping.consumes,
+                    produces = mapping.produces
+            )
+
+            private fun setUniqueOperationId(operation: Operation, operationId: String): Operation {
+                definedOperationIds.find { it == operationId }?.let { throw Exception("Duplicate operationId: " + operationId) }
+                definedOperationIds.add(operationId)
+                operation.operationId = operationId
+                return operation
+            }
+
+            fun setOperation(operation: Operation, operationNickname: String?) {
+                var pathValue = this.path
+                if (pathValue.isEmpty()) pathValue = arrayOf("")
+                if (this.consumes.isNotEmpty()) operation.consumes = this.consumes.asList()
+                if (this.produces.isNotEmpty()) operation.produces = this.produces.asList()
+                val method = this.method
+                // it may just one...
+                pathValue.forEach {
+                    val absPath = Paths.get(currentPath, it).toString()
+                    // Ignore path if not match
+                    if (!pathRegex.containsMatchIn(absPath)) return@forEach
+
+                    // If path is already defined, use it.
+                    // Even if the same request methods was defined, build will be error by spring.
+                    val path = swagger.getPath(absPath) ?: Path()
+                    val operationId = operationNickname ?: e.simpleName.toString()
+
+                    // set parameters
+                    e.accept(ParamVisitor(swagger, operation.parameters, propertyUtil), null)
+
+                    method.forEach {
+                        when (it) {
+                            RequestMethod.DELETE -> path.delete = setUniqueOperationId(operation, operationId)
+                            RequestMethod.GET -> path.get = setUniqueOperationId(operation, operationId)
+                            RequestMethod.OPTIONS -> path.options = setUniqueOperationId(operation, operationId)
+                            RequestMethod.PATCH -> path.patch = setUniqueOperationId(operation, operationId)
+                            RequestMethod.POST -> path.post = setUniqueOperationId(operation, operationId)
+                            RequestMethod.PUT -> path.put = setUniqueOperationId(operation, operationId)
+                            RequestMethod.HEAD -> path.head = setUniqueOperationId(operation, operationId)
+                            RequestMethod.TRACE -> TODO("Not implemented")
+                        }
+                    }
+                    swagger.path(absPath, path)
+                }
+            }
         }
 
         // One method means one operation, but an operationId is needed per method.
@@ -95,87 +199,12 @@ class FunctionVisitor(
             if (it.nickname.isNotEmpty()) operationNickname = it.nickname
         }
 
-        e.getAnnotation(RequestMapping::class.java)?.let {
-            val pathValue = if (it.value.isNotEmpty()) it.value else it.path
-            if (it.consumes.isNotEmpty()) operation.consumes = it.consumes.asList()
-            if (it.produces.isNotEmpty()) operation.produces = it.produces.asList()
-            val method = it.method
-            // it may just one...
-            pathValue.forEach {
-                // Ignore path if not match
-                if (!pathRegex.containsMatchIn(currentPath + it)) return@forEach
-
-                // If path is already defined, use it.
-                // Even if the same request methods was defined, build will be error by spring.
-                val path = swagger.getPath(currentPath + it) ?: Path()
-                val operationId = if (operationNickname != null) operationNickname!! else e.simpleName.toString()
-
-                // set parameters
-                e.accept(ParamVisitor(swagger, operation.parameters, propertyUtil), null)
-
-                method.forEach {
-                    when (it) {
-                        RequestMethod.DELETE -> path.delete = setUniqueOperationId(operation, operationId)
-                        RequestMethod.GET -> path.get = setUniqueOperationId(operation, operationId)
-                        RequestMethod.OPTIONS -> path.options = setUniqueOperationId(operation, operationId)
-                        RequestMethod.PATCH -> path.patch = setUniqueOperationId(operation, operationId)
-                        RequestMethod.POST -> path.post = setUniqueOperationId(operation, operationId)
-                        RequestMethod.PUT -> path.put = setUniqueOperationId(operation, operationId)
-                        RequestMethod.HEAD -> path.head = setUniqueOperationId(operation, operationId)
-                        RequestMethod.TRACE -> TODO("Not implemented")
-                    }
-                }
-                swagger.path(currentPath + it, path)
-            }
-        }
-
-        e.getAnnotation(GetMapping::class.java)?.let {
-            val pathValue = if (it.value.isNotEmpty()) it.value else it.path
-            if (it.consumes.isNotEmpty()) operation.consumes = it.consumes.asList()
-            if (it.produces.isNotEmpty()) operation.produces = it.produces.asList()
-
-            // it may just one...
-            pathValue.forEach {
-                // Ignore path if not match
-                if (!pathRegex.containsMatchIn(currentPath + it)) return@forEach
-
-                // If path is already defined, use it.
-                // Even if the same request methods was defined, build will be error by spring.
-                val path = swagger.getPath(currentPath + it) ?: Path()
-                val operationId = if (operationNickname != null) operationNickname!! else e.simpleName.toString()
-
-                // set parameters
-                e.accept(ParamVisitor(swagger, operation.parameters, propertyUtil), null)
-
-                path.get = setUniqueOperationId(operation, operationId)
-
-                swagger.path(currentPath + it, path)
-            }
-        }
-
-        e.getAnnotation(PostMapping::class.java)?.let {
-            val pathValue = if (it.value.isNotEmpty()) it.value else it.path
-            if (it.consumes.isNotEmpty()) operation.consumes = it.consumes.asList()
-            if (it.produces.isNotEmpty()) operation.produces = it.produces.asList()
-
-            // it may just one...
-            pathValue.forEach {
-                // Ignore path if not match
-                if (!pathRegex.containsMatchIn(currentPath + it)) return@forEach
-
-                // If path is already defined, use it.
-                // Even if the same request methods was defined, build will be error by spring.
-                val path = swagger.getPath(currentPath + it) ?: Path()
-                val operationId = if (operationNickname != null) operationNickname!! else e.simpleName.toString()
-
-                // set parameters
-                e.accept(ParamVisitor(swagger, operation.parameters, propertyUtil), null)
-
-                path.post = setUniqueOperationId(operation, operationId)
-
-                swagger.path(currentPath + it, path)
-            }
-        }
+        e.getAnnotation(RequestMapping::class.java)?.let { RequestMappingData(it) }?.let { it.setOperation(operation, operationNickname) }
+        e.getAnnotation(GetMapping::class.java)?.let { RequestMappingData(it) }?.let { it.setOperation(operation, operationNickname) }
+        e.getAnnotation(PostMapping::class.java)?.let { RequestMappingData(it) }?.let { it.setOperation(operation, operationNickname) }
+        e.getAnnotation(PutMapping::class.java)?.let { RequestMappingData(it) }?.let { it.setOperation(operation, operationNickname) }
+        e.getAnnotation(PatchMapping::class.java)?.let { RequestMappingData(it) }?.let { it.setOperation(operation, operationNickname) }
+        e.getAnnotation(DeleteMapping::class.java)?.let { RequestMappingData(it) }?.let { it.setOperation(operation, operationNickname) }
 
         return super.visitExecutable(e, p)
     }
