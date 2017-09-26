@@ -31,8 +31,9 @@ class PropertyUtil(
         private val typeUtils: Types
 ) {
     fun doEachClassField(className: String, fn: (VariableElement) -> Unit) {
-        val typeElement = elementUtils.getTypeElement(className)
+        val typeElement = elementUtils.getTypeElement(className) ?: return
         ElementFilter.fieldsIn(typeElement.enclosedElements).forEach {
+            it ?: return@forEach
             // enum class cannot converted to swagger spec automatically.
             // ApiParam.allowableValues should be used, but not implemented.
             if (elementUtils.getTypeElement(it.asType().toString())?.kind == ElementKind.ENUM) return@forEach

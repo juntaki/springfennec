@@ -18,11 +18,12 @@ package com.juntaki.springfennec
 
 import com.juntaki.springfennec.util.PropertyUtil
 import io.swagger.annotations.ApiOperation
-import io.swagger.annotations.ApiResponses
 import io.swagger.models.Operation
 import io.swagger.models.Path
 import io.swagger.models.Response
 import io.swagger.models.Swagger
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import javax.lang.model.element.ExecutableElement
@@ -94,10 +95,13 @@ class FunctionVisitor(
             if (it.nickname.isNotEmpty()) operationNickname = it.nickname
         }
 
-        val requestMapping: RequestMapping? = e.getAnnotation(RequestMapping::class.java)
-        requestMapping?.let {
+        e.getAnnotation(RequestMapping::class.java)?.let {
+            val pathValue = if (it.value.isNotEmpty()) it.value else it.path
+            if (it.consumes.isNotEmpty()) operation.consumes = it.consumes.asList()
+            if (it.produces.isNotEmpty()) operation.produces = it.produces.asList()
+            val method = it.method
             // it may just one...
-            requestMapping.value.forEach {
+            pathValue.forEach {
                 // Ignore path if not match
                 if (!pathRegex.containsMatchIn(currentPath + it)) return@forEach
 
@@ -106,13 +110,10 @@ class FunctionVisitor(
                 val path = swagger.getPath(currentPath + it) ?: Path()
                 val operationId = if (operationNickname != null) operationNickname!! else e.simpleName.toString()
 
-                if (requestMapping.consumes.isNotEmpty()) operation.consumes = requestMapping.consumes.asList()
-                if (requestMapping.produces.isNotEmpty()) operation.produces = requestMapping.produces.asList()
-
                 // set parameters
                 e.accept(ParamVisitor(swagger, operation.parameters, propertyUtil), null)
 
-                requestMapping.method.forEach {
+                method.forEach {
                     when (it) {
                         RequestMethod.DELETE -> path.delete = setUniqueOperationId(operation, operationId)
                         RequestMethod.GET -> path.get = setUniqueOperationId(operation, operationId)
@@ -127,6 +128,55 @@ class FunctionVisitor(
                 swagger.path(currentPath + it, path)
             }
         }
+
+        e.getAnnotation(GetMapping::class.java)?.let {
+            val pathValue = if (it.value.isNotEmpty()) it.value else it.path
+            if (it.consumes.isNotEmpty()) operation.consumes = it.consumes.asList()
+            if (it.produces.isNotEmpty()) operation.produces = it.produces.asList()
+
+            // it may just one...
+            pathValue.forEach {
+                // Ignore path if not match
+                if (!pathRegex.containsMatchIn(currentPath + it)) return@forEach
+
+                // If path is already defined, use it.
+                // Even if the same request methods was defined, build will be error by spring.
+                val path = swagger.getPath(currentPath + it) ?: Path()
+                val operationId = if (operationNickname != null) operationNickname!! else e.simpleName.toString()
+
+                // set parameters
+                e.accept(ParamVisitor(swagger, operation.parameters, propertyUtil), null)
+
+                path.get = setUniqueOperationId(operation, operationId)
+
+                swagger.path(currentPath + it, path)
+            }
+        }
+
+        e.getAnnotation(PostMapping::class.java)?.let {
+            val pathValue = if (it.value.isNotEmpty()) it.value else it.path
+            if (it.consumes.isNotEmpty()) operation.consumes = it.consumes.asList()
+            if (it.produces.isNotEmpty()) operation.produces = it.produces.asList()
+
+            // it may just one...
+            pathValue.forEach {
+                // Ignore path if not match
+                if (!pathRegex.containsMatchIn(currentPath + it)) return@forEach
+
+                // If path is already defined, use it.
+                // Even if the same request methods was defined, build will be error by spring.
+                val path = swagger.getPath(currentPath + it) ?: Path()
+                val operationId = if (operationNickname != null) operationNickname!! else e.simpleName.toString()
+
+                // set parameters
+                e.accept(ParamVisitor(swagger, operation.parameters, propertyUtil), null)
+
+                path.post = setUniqueOperationId(operation, operationId)
+
+                swagger.path(currentPath + it, path)
+            }
+        }
+
         return super.visitExecutable(e, p)
     }
 

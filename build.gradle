@@ -39,10 +39,6 @@ repositories {
     mavenCentral()
 }
 
-jar {
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-}
-
 dependencies {
     compile 'io.swagger:swagger-core:1.5.16'
     compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
