@@ -28,23 +28,33 @@ In order to generate a predicatable OperationId, programmer have the responsibil
 
 ### Model name
 
-Model name is Java FQCN.
+Model name is Java FQCN, so it's always unique.
 
 ## How to use
 
 ### Get started
 
+Please refer to [springfennec-demo](https://github.com/juntaki/springfennec-demo) Project.
+
 Use apt or kapt to work Springfennec at build.
-Add the following line to build.Gradle.
+Add the following line to build.Gradle's dependencies.
+If you are working with Java only project, add Kotlin dependency also.
 
 ~~~
-compileOnly 'com.juntaki:springfennec:{version}'
-kapt 'com.juntaki:springfennec:{version}'
+dependencies {
+	...
+	// Springfennec
+	def springfennecVersion = 'x.x.x'
+	compile('io.swagger:swagger-core:1.5.16')
+	compile("com.juntaki:springfennec:${springfennecVersion}")
+	kapt("com.juntaki:springfennec:${springfennecVersion}")
+	...
+}
 ~~~
 
 ### Springfennec annotation
 
-You can define sub API gruops in an App, by @ApiGroup annotation. (like Docket)
+You can define multiple API gruops in an App, by @ApiGroup/@ApiGroups annotations. (like Docket)
 OperationId must be unique for each API group.
 
 For @SwaggerDefinition annotaion, refer to [Swagger-Core Annotations documentation](https://github.com/swagger-api/swagger-core/wiki/Annotations-1.5.X#swaggerdefinition)
@@ -55,10 +65,38 @@ For @SwaggerDefinition annotaion, refer to [Swagger-Core Annotations documentati
           apiInfo = @SwaggerDefinition(...))
 ~~~
 
+e.g. ApiGroups example
+
+~~~
+@ApiGroups(
+        arrayOf(
+                ApiGroup(arrayOf("^/demo/user.*"),
+                        name = "user",
+                        apiInfo = SwaggerDefinition(
+                                info = Info(
+                                        version = "1.0",
+                                        title = "User API"
+                                )
+                        )
+                ),
+                ApiGroup(arrayOf("^/demo/admin.*"),
+                        name = "admin",
+                        apiInfo = SwaggerDefinition(
+                                info = Info(
+                                        version = "1.0",
+                                        title = "Admin API"
+                                )
+                        )
+                )
+        )
+)
+~~~
+
+
 ### Swagger annotation
 
 The following swagger annotation is used for spec.json generation.
-Parameters determined by Spring may be ignored, even if annotation defines it.
+Parameters determined by Spring may be ignored, even if the annotation defines it.
 
 ~~~
 @ApiOperaiton
