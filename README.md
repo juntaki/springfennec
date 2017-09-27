@@ -22,11 +22,11 @@ Please make a request by Pull request or Issue.
 
 ## How to work
 
-### OperaionId
+### OperationId
 
-If nickname in @ApiOperaiton annotaion is defined, it will be OperaitonId. If not, function name will be used.
+If nickname in @ApiOperation annotation is defined, it will be OperationId. If not, function name will be used.
 
-In order to generate a predicatable OperationId, programmer have the responsibility to maintain its uniqueness. Therefore, suffix are not added by springfennec. If it isn't unique in the API group, the build will just fail.
+In order to generate a predictable OperationId, programmer have the responsibility to maintain its uniqueness. Therefore, suffix are not added by springfennec. If it isn't unique in the API group, the build will just fail.
 
 ### Model name
 
@@ -56,10 +56,10 @@ dependencies {
 
 ### Springfennec annotation
 
-You can define multiple API gruops in an App, by @ApiGroup/@ApiGroups annotations. (like Docket)
+You can define multiple API groups in an App, by @ApiGroup/@ApiGroups annotations. (like Docket)
 OperationId must be unique for each API group.
 
-For @SwaggerDefinition annotaion, refer to [Swagger-Core Annotations documentation](https://github.com/swagger-api/swagger-core/wiki/Annotations-1.5.X#swaggerdefinition)
+For @SwaggerDefinition annotation, refer to [Swagger-Core Annotations documentation](https://github.com/swagger-api/swagger-core/wiki/Annotations-1.5.X#swaggerdefinition)
 
 ~~~
 @ApiGroup(value="^/pet/.*",        // regex for path (not include basePath)
@@ -101,6 +101,6 @@ The following swagger annotation is used for spec.json generation.
 Parameters determined by Spring may be ignored, even if the annotation defines it.
 
 ~~~
-@ApiOperaiton
+@ApiOperation
 @ApiParam
 ~~~
