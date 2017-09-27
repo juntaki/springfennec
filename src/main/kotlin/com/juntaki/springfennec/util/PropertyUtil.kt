@@ -104,7 +104,7 @@ class PropertyUtil(
         val mapRegex = Regex("""^java.util.Map""")
         if (tm is DeclaredType && mapRegex.containsMatchIn(tm.toString())) {
             if (!isAssignable(tm.typeArguments[0], "java.lang.String")) {
-                TODO("Not implemented.")
+                // TODO: Not implemented
                 // TODO: Read JSON Schema and https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#responses-definitions-object
             }
             val mapProperty = MapProperty()
