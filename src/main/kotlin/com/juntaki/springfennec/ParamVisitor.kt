@@ -21,7 +21,6 @@ import io.swagger.annotations.ApiParam
 import io.swagger.models.Swagger
 import io.swagger.models.parameters.*
 import io.swagger.models.properties.*
-import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestHeader
@@ -120,7 +119,10 @@ class ParamVisitor(
 
     override fun visitVariable(e: VariableElement?, p: Void?): Void? {
         // Ignore AuthenticationPrincipal parameter, it will set by spring security.
-        e!!.getAnnotation(AuthenticationPrincipal::class.java)?.let { return super.visitVariable(e, p) }
+        e!!.annotationMirrors.forEach {
+            if (it.toString() == "@org.springframework.security.core.annotation.AuthenticationPrincipal")
+                return super.visitVariable(e, p)
+        }
 
         // Get empty parameter
         val param = createParamBySpringAnnotation(e)

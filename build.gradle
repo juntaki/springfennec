@@ -1,5 +1,5 @@
 group 'com.juntaki'
-version '1.0.3'
+version '1.0.4'
 description = "Swagger spec.json generator for Spring annotation"
 
 //set build variables based on build type (release, continuous integration, development)
