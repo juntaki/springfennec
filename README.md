@@ -1,5 +1,7 @@
 # Springfennec
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.juntaki/springfennec/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.juntaki/springfennec)
+
 [Swagger (OpenAPI 2.0)](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md) spec.json generator for the API client generation by [swagger-codegen](https://github.com/swagger-api/swagger-codegen).
 
 ## Features 
